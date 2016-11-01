@@ -11,14 +11,12 @@ DOCUMENTATION IS INCOMPLETE
 
 SUBMIT A PR IF YOU MAKE USEFUL CHANGES
 
-
-In a blockchain election, there are just three things to do:
-
 FEATURES ENSURING THE SECURITY OF THE DOWNLOADED SCRIPTS VIA COMPARE TO COORDINATION HASH ARE INCOMPLETE.
 
 THIS VOTING MECHANIC HAS IMPERFECT RECIEPT FREEDOM! EXPLORE THE USE OF JOINMARKET TO ANONIFY(sic) VOTERS
 
 
+In a blockchain election, there are just three things to do:
   1. bootstrap the coordination address.
     --this address is used to coordinate the various transactions in the election
     --it's first input is a specially formatted transaction with an OP_RETURN
