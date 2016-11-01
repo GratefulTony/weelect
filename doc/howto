@@ -1,0 +1,104 @@
+RELEASE NOTES:
+THIS IS EXPERIMENTAL SOFTWARE UNDER GPLV3
+
+IT IS MOSTLY CRAP.
+
+IT USES BITCOIN4J. 
+
+IT HAS NOT BEEN AUDITED
+
+DOCUMENTATION IS INCOMPLETE
+
+SUBMIT A PR IF YOU MAKE USEFUL CHANGES
+
+
+In a blockchain election, there are just three things to do:
+
+FEATURES ENSURING THE SECURITY OF THE DOWNLOADED SCRIPTS VIA COMPARE TO COORDINATION HASH ARE INCOMPLETE.
+
+THIS VOTING MECHANIC HAS IMPERFECT RECIEPT FREEDOM! EXPLORE THE USE OF JOINMARKET TO ANONIFY(sic) VOTERS
+
+
+  1. bootstrap the coordination address.
+    --this address is used to coordinate the various transactions in the election
+    --it's first input is a specially formatted transaction with an OP_RETURN
+      (the OP_RETURN has a special format which helps us determine the coordination and witness addr and the software hash.)
+
+    a) to prepare to bootstrap, we need to get a rx address which will be used to fund the bootstrapper.
+       we will run the Bootstrap main class with the "getRxAddr" argument.
+
+      $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.administer.Bootstrap getRxAddr
+        (the wallet will quickly synchronize with the blockchain, then output an address we can use to fund the bootstrapper.
+
+      $ USAGE:
+      $ Bootstrap coordinationAddr=<coordination_addr> witnessAddr=<witness_addr>
+      $
+      $
+      $
+      $ loading blockchain...
+      $ 121 [WalletAppKit STARTING] INFO org.bitcoinj.kits.WalletAppKit - Starting up with directory = .
+      $ 252 [WalletAppKit STARTING] INFO org.bitcoinj.core.AbstractBlockChain - chain head is at height 397129:
+      $  block:
+      $    hash: 0000000000000000058a18af6c974c224876fcc0d0da9e05be8fd4b52bced43d
+      $    version: 4 (BIP34, BIP66, BIP65)
+      $    previous block: 000000000000000008af43c28b2da14df5c4c384aef30cafcec5b5e77acfad30
+      $    merkle root: cefb3ccc8da6d379c238883dbd3f44e7c7346ca2b638a925f0113f5dcf0e717c
+      $    time: [1454806052] 2016-02-07T00:47:32Z
+      $    difficulty target (nBits): 403253488
+      $    nonce: 4213745478
+      $ rx addr: 18aQ7qd9jEeDCJrhWWJywKB1BuAXoNCcQZ
+
+    b) now, we send a transaction to this bootstrapper rxAddr from any wallet to provide funds...
+    c) after confirming, the bootstrapper wallet is funded! We may now send the bootstrap tx after we ask the voter
+       registration authority for their address... they follow a similar procedure to get one:
+       (on the registration server) $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.witness.Witness getRxAddr
+        outputs: rx addr: 1EwzUTnoRiPw5xqVDtzLAb1Q1C3ghgv2RW, this will now be the witness addr.
+
+    (note, the coordinationAddr is arbitrary. we require only that it's first input came from the Bootstrap script.)
+    we will be using coordinationAddr=1PMQoDcdTwSG6vvuhj4EPsSu3x4SpXo7xj
+
+    (on coordinator computer) $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.administer.Bootstrap coordinationAddr=1PMQoDcdTwSG6vvuhj4EPsSu3x4SpXo7xj witnessAddr=1EwzUTnoRiPw5xqVDtzLAb1Q1C3ghgv2RW
+      after confirmation, the election is bootstrapped!
+
+
+  2. Voter registration.
+    --voter registration is meant to be outsourced to a voter registration authority. The voter registration authority,
+      or witness, should provide means for voters to anonymously send them the addresses they would like to vote from.
+      This could be as simple as dropping a paper with the address written on it in a box, or as complex as using an
+      anonymous online system like IdentityMixer. In the end, the witness should have assembled a list of addresses to
+      register: witness.csv. All addresses in witness.csv will be valid voters after firing the Witness script:
+     
+    --Voters get their voting address from running a similar script as above:
+      (on voter's computer) $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.vote.Vote getRxAddr    
+     
+    a) we run the voter registration script after the voters have given us their registration addresses.
+   
+       (on witness computer) $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.witness.Witness coordinationAddr=1PMQoDcdTwSG6vvuhj4EPsSu3x4SpXo7xj witnessAddr=1EwzUTnoRiPw5xqVDtzLAb1Q1C3ghgv2RW registerAddrs=witness.csv
+       
+       NOTE:
+       We have designed the witness script to give a small quantity of bitcoin to the voter addresses to subsidize fees
+       and facilitate the voting perspective from the point of view of the voter. Once registered, the voters can vote!
+       
+  3. Vote!
+     --now that voters have had their addresses confirmed by the voter registration authority, they should have received
+     a transaction with sufficient outputs to vote for a candidate, or ballot outcome. They simply call the voting script:
+     
+     $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.vote.Vote coordinationAddr=1PMQoDcdTwSG6vvuhj4EPsSu3x4SpXo7xj witnessAddr=1EwzUTnoRiPw5xqVDtzLAb1Q1C3ghgv2RW voteFor=<arbitrary address publicized by political candidates>    
+       
+     after the confirmation of the vote transaction, the voter has voted. Only the last vote transaction from the registered voter
+     address is counted as a vote, so if they want to change their vote before the election is over, they can simply by sending a new vote transaction.
+     
+  Now that the election is over (at some pre-agreed upon blockheight, coded into the client) we can check that)
+    --All voter addresses are properly registered
+    --election outcome
+   
+  The Audit script outputs information about these factors:
+ 
+  (on any computer) $ java -cp target/weelect-0.1-SNAPSHOT.jar com.weelect.audit.Audit coordinationAddr=1PMQoDcdTwSG6vvuhj4EPsSu3x4SpXo7xj witnessAddr=1EwzUTnoRiPw5xqVDtzLAb1Q1C3ghgv2RW
+  returns:
+     registered voters:
+        <list of registered addrs>
+     top 10 most-popular vote outcomes:
+        <list of most-voted-for addresses>
+
+     We have shown that it is possible to coordinate, register voters, vote, and audit an election using the blockchain!
